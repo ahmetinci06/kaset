@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>kaset — retro kamera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Permanent+Marker&family=VT323&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --body-hi:#D6D8DB; --body-lo:#C2C5C9; --ink:#1B1C1E; --muted:#51565C; --hair:#A5A9AE;
+  --bezel:#26282C; --rec:#E0301E; --led:#F2A33A; --label:#F4F0E4; --rule:#B3C6E0; --shell:#2B2C30;
+  --sheet:#E4E6E9; --chip:#ECEEF0; --focus:#1F5FBF; --scrim:rgba(20,21,24,.42);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --marker:"Permanent Marker","Marker Felt","Comic Sans MS",cursive;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --body-hi:#313337; --body-lo:#25272A; --ink:#E8E9EB; --muted:#A5AAB0; --hair:#474A50;
+    --bezel:#0F1012; --sheet:#232428; --chip:#303236; --shell:#17181B; --focus:#8DB4FF; --scrim:rgba(0,0,0,.55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --body-hi:#313337; --body-lo:#25272A; --ink:#E8E9EB; --muted:#A5AAB0; --hair:#474A50;
+  --bezel:#0F1012; --sheet:#232428; --chip:#303236; --shell:#17181B; --focus:#8DB4FF; --scrim:rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none !important}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--body-lo);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.4;overflow:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+
+.app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:8px 14px 10px;background:linear-gradient(180deg,var(--body-hi),var(--body-lo));}
+@media (min-width:600px){ .app{border-left:1px solid var(--hair);border-right:1px solid var(--hair)} body{background:var(--body-hi)} }
+
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:40px}
+.brand{display:flex;align-items:center;gap:10px}
+.led{width:8px;height:8px;border-radius:50%;background:var(--led);box-shadow:0 0 0 2px rgba(0,0,0,.14),0 0 8px rgba(242,163,58,.65)}
+.is-rec .led{background:var(--rec);box-shadow:0 0 0 2px rgba(0,0,0,.14),0 0 12px rgba(224,48,30,.95)}
+.word{font-weight:800;font-variation-settings:"wdth" 125;font-size:23px;letter-spacing:-.015em;line-height:1}
+.bar-r{display:flex;align-items:center;gap:8px}
+.chip{height:34px;min-width:52px;padding:0 12px;border-radius:17px;background:var(--chip);border:1px solid var(--hair);font-weight:650;font-variation-settings:"wdth" 110;font-size:14px}
+.ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--chip);border:1px solid var(--hair)}
+.ic svg{width:18px;height:18px}
+
+.stage{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.stage>*{transform:translateY(var(--lift,0px));transition:transform .3s var(--ease)}
+.bezel{padding:8px;background:var(--bezel);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 0 rgba(255,255,255,.35),0 10px 24px rgba(0,0,0,.22)}
+.lcd{position:relative;width:320px;height:240px;overflow:hidden;background:#000;border-radius:6px}
+.lcd canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.osd-over{image-rendering:pixelated;pointer-events:none}
+.power{position:absolute;inset:0;background:#000;pointer-events:none;opacity:0}
+.power.on{opacity:1;animation:pw-fade .45s .6s forwards}
+.power.on::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:#F2F6FF;box-shadow:0 0 14px #CFE0FF;transform:scaleX(0);animation:pw-line .7s .05s var(--ease) forwards}
+@keyframes pw-line{0%{transform:scaleX(0) scaleY(1);opacity:1}45%{transform:scaleX(1) scaleY(1);opacity:1}100%{transform:scaleX(1) scaleY(140);opacity:0}}
+@keyframes pw-fade{to{opacity:0}}
+.msg{width:100%;display:flex;flex-direction:column;gap:8px;padding:0 2px}
+.msg p{margin:0;font-size:14px;line-height:1.35;color:var(--muted);max-width:44ch}
+.msg-a{display:flex;gap:8px;flex-wrap:wrap}
+.btn{height:38px;padding:0 16px;border-radius:19px;font-weight:650;font-size:14px;border:1px solid var(--hair);color:var(--ink);background:transparent}
+.btn.primary{background:var(--ink);color:var(--body-hi);border-color:var(--ink)}
+.btn.ghost{border-color:transparent;color:var(--muted)}
+
+.tapes{display:flex;gap:10px;padding:2px 2px 0}
+.tape{position:relative;flex:1 1 0;min-width:0;height:78px;border-radius:9px;background:var(--shell);padding:6px 6px 0;opacity:.66;transition:transform .2s var(--ease),opacity .2s,box-shadow .2s;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 1px 0 rgba(0,0,0,.25);text-align:left}
+.tape[aria-checked="true"]{opacity:1;transform:translateY(-4px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 8px 16px rgba(0,0,0,.28)}
+.label{display:block;height:44px;border-radius:4px;padding:3px 7px 0;border-top:6px solid var(--stripe);background:repeating-linear-gradient(to bottom,transparent 0 12px,var(--rule) 12px 13px),var(--label);overflow:hidden}
+.marker{display:block;font-family:var(--marker);font-size:15px;line-height:1.25;color:#1D2847;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform:rotate(-1.6deg);transform-origin:left center}
+.note{display:block;font-size:10.5px;line-height:1.2;color:#5B6070;font-variation-settings:"wdth" 88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reels{display:flex;justify-content:center;gap:24px;margin-top:5px}
+.reels i{display:block;width:15px;height:15px;border-radius:50%;background:radial-gradient(circle,#0B0B0D 0 26%,#4A4C52 27% 44%,#0B0B0D 45%);position:relative}
+.reels i::after{content:"";position:absolute;left:6.5px;top:1px;width:2px;height:4px;background:#8A8D94;border-radius:1px}
+.is-rec .tape[aria-checked="true"] .reels i{animation:spin 1.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.deck{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:2px 4px 2px}
+.side{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted);justify-self:start;min-width:64px}
+.side:last-child{justify-self:end}
+.disc{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,var(--chip),var(--body-lo));border:1px solid var(--hair);color:var(--ink)}
+.disc svg{width:20px;height:20px}
+.side:disabled{opacity:.45}
+.rec{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,#F5F6F7,#B6B9BE);box-shadow:inset 0 1px 0 #fff,0 3px 8px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.12)}
+.rec-core{display:block;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 42% 34%,#FF6B57,var(--rec) 58%,#A11B0F);box-shadow:inset 0 -2px 3px rgba(0,0,0,.25);transition:width .2s var(--ease),height .2s var(--ease),border-radius .2s var(--ease)}
+.rec[aria-pressed="true"] .rec-core{width:30px;height:30px;border-radius:7px}
+
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;transition:opacity .25s;z-index:10}
+.scrim.on{opacity:1}
+.scrim.clear{background:transparent}
+.sheet.peek{max-height:54%}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:80%;overflow:auto;overscroll-behavior:contain;background:var(--sheet);border-radius:18px 18px 0 0;padding:6px 18px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(102%);transition:transform .3s var(--ease);z-index:11;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.sheet.open{transform:none}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--hair);margin:4px auto 8px}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet h2{margin:0;font-size:21px;font-weight:750;font-variation-settings:"wdth" 112;letter-spacing:-.01em}
+.x{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--chip);border:1px solid var(--hair)}
+.x svg{width:16px;height:16px}
+.sheet-sub{margin:6px 0 14px;color:var(--muted);font-size:14px;max-width:46ch}
+.amt{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 0 14px;border-bottom:1px solid var(--hair)}
+.amt span{font-weight:650}
+.amt output{font-variant-numeric:tabular-nums;color:var(--muted);min-width:4ch;text-align:right}
+input[type=range]{width:100%;accent-color:var(--rec)}
+.lg h3{margin:16px 0 4px;font-size:13px;font-weight:700;color:var(--muted);font-variation-settings:"wdth" 110}
+.lrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--hair)}
+.lrow:last-child{border-bottom:0}
+.lt{display:flex;flex-direction:column;min-width:0}
+.ln{font-weight:650}
+.lw{font-size:13px;color:var(--muted);line-height:1.3}
+.lrow.na .ln{color:var(--muted)}
+.sw{flex:none;width:46px;height:28px;border-radius:14px;background:var(--hair);position:relative;transition:background .2s}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s var(--ease)}
+.sw[aria-checked="true"]{background:var(--ink)}
+.sw[aria-checked="true"] i{transform:translateX(18px)}
+.sw:disabled{opacity:.35}
+.src-list{display:flex;flex-direction:column;gap:8px;padding:4px 0 6px}
+.src-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);text-align:left}
+.src-opt[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.src-t{font-weight:700}
+.src-d{font-size:13px;color:var(--muted)}
+#clipVideo{display:block;width:100%;max-height:46vh;background:#000;border-radius:8px}
+.clip-a{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:calc(128px + env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);max-width:min(88vw,420px);padding:10px 16px;border-radius:12px;background:#17181B;color:#F4F5F7;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s var(--ease);z-index:30;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.lcd .feed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
+.linkbox{flex:1 1 100%;min-width:0;height:38px;border-radius:10px;border:1px solid var(--hair);background:var(--chip);color:var(--ink);padding:0 10px;font:inherit;font-size:13px}
+@media (prefers-reduced-motion:reduce){
+  .power{display:none}
+  .sheet,.scrim,.tape,.rec-core,.sw,.sw i,.toast,.stage>*{transition:none}
+  .is-rec .tape[aria-checked="true"] .reels i{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <div class="brand"><span class="led" id="led" aria-hidden="true"></span><span class="word">kaset</span></div>
+    <div class="bar-r">
+      <button class="chip" id="fmtBtn" type="button" aria-label="En-boy oranı 4:3. Dikeye geçmek için dokun.">4:3</button>
+      <button class="ic" id="flipBtn" type="button" aria-label="Kamerayı çevir" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
+      </button>
+      <button class="ic" id="layersBtn" type="button" aria-label="Katmanlar" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="bezel">
+      <div class="lcd" id="lcd">
+        <video id="camVideo" class="feed" playsinline muted aria-hidden="true"></video>
+        <video id="fileVideo" class="feed" playsinline aria-hidden="true"></video>
+        <canvas id="gl" aria-label="Vizör"></canvas>
+        <canvas id="osd" class="osd-over" aria-hidden="true" hidden></canvas>
+        <div class="power" id="power" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="msg" id="msg" role="status">
+      <p id="msgText">Demo sahnesi oynuyor. Kendi görüntün için kamerayı aç.</p>
+      <div class="msg-a" id="msgActions"></div>
+    </div>
+  </main>
+
+  <section class="tapes" id="tapes" role="radiogroup" aria-label="Kaset">
+    <button class="tape" type="button" role="radio" aria-checked="true" tabindex="0" data-preset="dv" style="--stripe:#3D6FB6">
+      <span class="label"><span class="marker">MiniDV ’05</span><span class="note">tarak, hale, smear</span></span>
+      <span class="reels" aria-hidden="true"><i></i><i></i></span>
+    </button>
+    <button class="tape" type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="vhs" style="--stripe:#D9642B">
+      <span class="label"><span class="marker">VHS-C ’96</span><span class="note">kanama, titreme</span></span>
+      <span class="reels" aria-hidden="true"><i></i><i></i></span>
+    </button>
+    <button class="tape" type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="cam" style="--stripe:#3F8F5E">
+      <span class="label"><span class="marker">Digicam ’03</span><span class="note">15 fps, blok, smear</span></span>
+      <span class="reels" aria-hidden="true"><i></i><i></i></span>
+    </button>
+  </section>
+
+  <footer class="deck">
+    <button class="side" id="srcBtn" type="button" aria-haspopup="dialog">
+      <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg></span>
+      <span>Kaynak</span>
+    </button>
+    <button class="rec" id="recBtn" type="button" aria-label="Kaydı başlat" aria-pressed="false"><span class="rec-core"></span></button>
+    <button class="side" id="clipBtn" type="button" aria-haspopup="dialog" disabled>
+      <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg></span>
+      <span>Klip</span>
+    </button>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet peek" id="layersSheet" role="dialog" aria-modal="true" aria-labelledby="layersTitle" hidden>
+  <div class="grab" aria-hidden="true"></div>
+  <div class="sheet-h"><h2 id="layersTitle">Katmanlar</h2><button class="x" type="button" data-close aria-label="Kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <p class="sheet-sub">Her katman gerçek bir kamera kusuru. Kapatınca ne kattığını görürsün.</p>
+  <label class="amt"><span>Yoğunluk</span><input type="range" id="amt" min="0" max="150" step="5" value="100"><output id="amtVal">100%</output></label>
+  <div id="layerList"></div>
+</section>
+
+<section class="sheet" id="srcSheet" role="dialog" aria-modal="true" aria-labelledby="srcTitle" hidden>
+  <div class="grab" aria-hidden="true"></div>
+  <div class="sheet-h"><h2 id="srcTitle">Kaynak</h2><button class="x" type="button" data-close aria-label="Kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="src-list">
+    <button class="src-opt" type="button" data-src="cam"><span class="src-t">Canlı kamera</span><span class="src-d">Vizörde canlı efekt; iOS’ta claude.ai içinde kapalı olabilir</span></button>
+    <button class="src-opt" type="button" data-src="shoot"><span class="src-t">Telefonla çek</span><span class="src-d">Kamera uygulaması açılır; klip kasetten geçip kaydedilir</span></button>
+    <button class="src-opt" type="button" data-src="file"><span class="src-t">Video dosyası</span><span class="src-d">Galerideki bir klibi kasetten geçirir</span></button>
+    <button class="src-opt" type="button" data-src="demo" aria-current="true"><span class="src-t">Demo sahne</span><span class="src-d">İzin istemez; efektleri görmek için</span></button>
+  </div>
+</section>
+
+<section class="sheet" id="clipSheet" role="dialog" aria-modal="true" aria-labelledby="clipTitle" hidden>
+  <div class="grab" aria-hidden="true"></div>
+  <div class="sheet-h"><h2 id="clipTitle">Kayıt hazır</h2><button class="x" type="button" data-close aria-label="Kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <p class="sheet-sub" id="clipInfo"></p>
+  <video id="clipVideo" playsinline controls loop></video>
+  <div class="clip-a">
+    <button class="btn primary" id="saveBtn" type="button">Kaydet</button>
+    <button class="btn" id="shareBtn" type="button">Paylaş</button>
+    <button class="btn ghost" id="delBtn" type="button">Sil</button>
+  </div>
+</section>
+
+<input type="file" id="fileInput" class="vh" accept="video/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="captureInput" class="vh" accept="video/*" capture="environment" tabindex="-1" aria-hidden="true">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s) => document.querySelector(s);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const pad2 = (n) => String(n).padStart(2, '0');
+const OSDF = '"VT323", "Courier New", monospace';
+
+const E = {
+  app: $('#app'), stage: $('#stage'), lcd: $('#lcd'), gl: $('#gl'), osd: $('#osd'), power: $('#power'),
+  msg: $('#msg'), msgText: $('#msgText'), msgA: $('#msgActions'),
+  fmt: $('#fmtBtn'), flip: $('#flipBtn'), layers: $('#layersBtn'),
+  src: $('#srcBtn'), rec: $('#recBtn'), clip: $('#clipBtn'),
+  file: $('#fileInput'), capture: $('#captureInput'), cam: $('#camVideo'), fv: $('#fileVideo'),
+  toast: $('#toast'), scrim: $('#scrim'),
+  layersSheet: $('#layersSheet'), srcSheet: $('#srcSheet'), clipSheet: $('#clipSheet'),
+  layerList: $('#layerList'), amt: $('#amt'), amtVal: $('#amtVal'),
+  clipVideo: $('#clipVideo'), clipInfo: $('#clipInfo'), save: $('#saveBtn'), share: $('#shareBtn'), del: $('#delBtn'),
+  tapes: Array.from(document.querySelectorAll('.tape')),
+};
+
+/* ---------- presets: every number is a physical knob, horizontal px are per 640-wide frame ---------- */
+const PRESETS = {
+  dv: {
+    year: 2005, r43: [640, 480], r916: [360, 640], fps: 30, banner: 'DV  SP',
+    sensor: { sat: 1.16, black: -0.03, knee: 0.74, contrast: 1.05, sharp: 1.0, noise: 0.02, cnoise: 0.016, smear: 0.6, bloom: 0.3, vig: 0.2, ca: 0.004,
+      wb: [0.96, 1.0, 1.06], cm: [1.05, -0.03, -0.02, -0.02, 1.03, -0.01, -0.01, -0.03, 1.04] },
+    tape: { inter: 1, lumaBlur: 0.5, ring: 0, chromaBlur: 1.6, chromaShift: 0.6, subH: 4, subV: 1, block: 0.012, jitter: 0, wave: 0, head: 0, drop: 0, snow: 0, tapeSat: 1.0, hue: 0, dvErr: 0.0005, track: 0 },
+    ae: { strength: 0.55, k: 10, c: 5.5, min: 0.6, max: 1.9 },
+    audio: { hp: 90, lp: 12000, thr: -30, ratio: 4, hiss: 0.0025, wow: 0 },
+  },
+  vhs: {
+    year: 1996, r43: [640, 480], r916: [360, 640], fps: 30, banner: 'VHS-C  SP',
+    sensor: { sat: 0.95, black: 0.05, knee: 0.84, contrast: 0.94, sharp: 0.35, noise: 0.02, cnoise: 0.02, smear: 0.45, bloom: 0.4, vig: 0.3, ca: 0.003,
+      wb: [1.06, 1.0, 0.9], cm: [1.04, 0.0, -0.04, 0.01, 1.0, -0.01, -0.02, 0.03, 0.93] },
+    tape: { inter: 1, lumaBlur: 1.25, ring: 0.7, chromaBlur: 7.0, chromaShift: 3.2, subH: 1, subV: 1, block: 0, jitter: 0.9, wave: 0.55, head: 1.0, drop: 0.0025, snow: 0.035, tapeSat: 0.86, hue: 0.18, dvErr: 0, track: 0.8 },
+    ae: { strength: 0.5, k: 6, c: 3.8, min: 0.7, max: 1.7 },
+    audio: { hp: 120, lp: 7000, thr: -34, ratio: 6, hiss: 0.008, wow: 0.0011 },
+  },
+  cam: {
+    year: 2003, r43: [320, 240], r916: [180, 320], fps: 15, banner: 'MOVIE  320',
+    sensor: { sat: 1.24, black: -0.01, knee: 0.68, contrast: 1.1, sharp: 0.55, noise: 0.035, cnoise: 0.04, smear: 0.85, bloom: 0.22, vig: 0.32, ca: 0.007,
+      wb: [1.0, 0.97, 1.06], cm: [1.08, -0.05, -0.03, -0.04, 1.06, -0.02, -0.02, -0.05, 1.07] },
+    tape: { inter: 0, lumaBlur: 0.35, ring: 0, chromaBlur: 1.2, chromaShift: 0, subH: 2, subV: 2, block: 0.045, jitter: 0, wave: 0, head: 0, drop: 0, snow: 0, tapeSat: 1.0, hue: 0, dvErr: 0, track: 0 },
+    ae: { strength: 0.65, k: 14, c: 5.0, min: 0.55, max: 2.2 },
+    audio: { hp: 200, lp: 3600, thr: -26, ratio: 3, hiss: 0.005, wow: 0 },
+  },
+};
+
+const LAYERS = [
+  { g: 'sensör', k: 'sharp', n: 'Kenar halesi', w: 'Kamera DSP’si kenarları abartır, kenarda beyaz çizgi kalır.', has: (p) => p.sensor.sharp > 0 || p.tape.ring > 0 },
+  { g: 'sensör', k: 'smear', n: 'CCD smear', w: 'Parlak ışıktan dikey çizgi: CCD sütunu yük sızdırır.', has: (p) => p.sensor.smear > 0 },
+  { g: 'sensör', k: 'noise', n: 'Gürültü', w: 'Düşük ışıkta kazanç artar, gölgeler karıncalanır.', has: () => true },
+  { g: 'sensör', k: 'ae', n: 'Oto-pozlama', w: 'Işık değişince parlaklık gecikmeyle, biraz taşarak oturur.', has: () => true },
+  { g: 'sensör', k: 'af', n: 'Otofokus avı', w: 'Sahne değişince odak bir an kaçıp geri gelir.', has: () => true },
+  { g: 'bant', k: 'inter', n: 'Interlace tarağı', w: 'İki yarım kare 1/60 sn arayla çekilir; hareket dişlenir.', has: (p) => p.tape.inter > 0 },
+  { g: 'bant', k: 'bleed', n: 'Renk kanaması', w: 'Renk bandı dar: renk yatayda yayılır, sağa kayar.', has: (p) => p.tape.chromaBlur > 2 || p.tape.chromaShift > 1 },
+  { g: 'bant', k: 'jitter', n: 'Hat titremesi', w: 'Bant mekaniği satırları sağa sola oynatır.', has: (p) => p.tape.jitter > 0 },
+  { g: 'bant', k: 'head', n: 'Bant hataları', w: 'VHS’te alt satır kopması ve oksit çizgisi, DV’de blok donması.', has: (p) => p.tape.head > 0 || p.tape.drop > 0 || p.tape.dvErr > 0 },
+  { g: 'bant', k: 'track', n: 'Tracking', w: 'Ara sıra kareden kayıp giden gürültü bandı.', has: (p) => p.tape.track > 0 },
+  { g: 'ekran', k: 'date', n: 'Tarih damgası', w: 'Kamerada, bant öncesi basılır; o da kanar.', has: () => true },
+  { g: 'ekran', k: 'rewind', n: 'Yılı geri sar', w: 'Damgada bugünün tarihi, kasetin yılıyla.', has: () => true },
+  { g: 'ekran', k: 'vfBurn', n: 'Vizörü kayda ekle', w: 'REC, pil ve sayaç videoya da girer.', has: () => true },
+  { g: 'ekran', k: 'crt', n: 'CRT çizgileri', w: 'Tüplü ekrandan çekilmiş gibi satır aralıkları.', has: () => true },
+];
+
+const S = { preset: 'dv', fmt: '43', source: 'demo', facing: 'environment', intensity: 1, recording: false, recStart: 0, banner: 0 };
+const L = { sharp: true, smear: true, noise: true, ae: true, af: true, inter: true, bleed: true, jitter: true, head: true, track: true, date: true, rewind: false, vfBurn: true, crt: false };
+
+/* ---------- toast + message ---------- */
+let toastT = 0;
+function toast(t) {
+  E.toast.textContent = t; E.toast.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => E.toast.classList.remove('on'), 2800);
+}
+const framed = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const fmtDur = (x) => { if (!isFinite(x)) return '–'; const t = Math.max(0, Math.round(x)); return `${Math.floor(t / 60)}:${pad2(t % 60)}`; };
+function setMsg(kind, detail) {
+  E.msgA.textContent = '';
+  const add = (label, fn, primary) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (primary ? ' primary' : '');
+    b.textContent = label; b.addEventListener('click', () => fn()); E.msgA.appendChild(b);
+  };
+  const say = (t) => { E.msgText.textContent = t; };
+  const canOpen = framed && /^https?:$/.test(location.protocol);
+  if (!kind) { E.msg.hidden = true; layout(); return; }
+  E.msg.hidden = false; requestAnimationFrame(layout);
+  if (kind === 'demo') {
+    say('Demo sahnesi oynuyor. Kendi görüntün için canlı kamerayı aç ya da telefonla çek.');
+    add('Kamerayı aç', openCamera, true); add('Telefonla çek', shoot); add('Video seç', pickFile);
+  } else if (kind === 'denied') {
+    say(framed
+      ? 'Bu çerçeve canlı kameraya izin vermiyor' + (isIOS ? ' (iOS’ta claude.ai içinde kapalı)' : '') + '. Telefonla çek: kamera uygulaması açılır, klip bu kasetten geçip kaydedilir.'
+      : 'Kamera izni gelmedi. Tarayıcı ayarlarından bu siteye kamera izni ver ya da telefonla çek.');
+    add('Telefonla çek', shoot, true);
+    if (canOpen) add('Ayrı sekmede aç', openStandalone);
+    if (!framed) add('Tekrar dene', openCamera);
+    add('Video seç', pickFile);
+  } else if (kind === 'nocam') {
+    say('Kamera bulunamadı. Telefonla çekip ya da galeriden seçip kasetten geçirebilirsin.');
+    add('Telefonla çek', shoot, true); add('Video seç', pickFile);
+  } else if (kind === 'unsupported') {
+    say('Bu görünüm canlı kameraya erişemiyor. Telefonla çekip kasetten geçirebilirsin.');
+    add('Telefonla çek', shoot, true); if (canOpen) add('Ayrı sekmede aç', openStandalone); add('Video seç', pickFile);
+  } else if (kind === 'clip') {
+    say(`Klip yüklendi · ${fmtDur(E.fv.duration)}. Kaseti seç, sonra aktar.`);
+    add('Kasete aktar', exportClip, true); add('Telefonla çek', shoot); add('Video seç', pickFile);
+  } else if (kind === 'exporting') {
+    say(`Kasete aktarılıyor · ${fmtDur(E.fv.currentTime)} / ${fmtDur(E.fv.duration)}`);
+    add('Durdur', finishExport, true);
+  } else if (kind === 'link') {
+    say('Bu görünüm yeni sekme açamıyor. Linki kopyala, Safari ya da Chrome’a yapıştır:');
+    const inp = document.createElement('input'); inp.type = 'text'; inp.readOnly = true; inp.value = location.href; inp.className = 'linkbox';
+    inp.addEventListener('focus', () => inp.select()); E.msgA.appendChild(inp);
+    add('Kopyala', async () => {
+      try { await navigator.clipboard.writeText(location.href); toast('Link kopyalandı'); }
+      catch (e) { inp.focus(); inp.select(); toast('Seçili linki kopyala'); }
+    }, true);
+    add('Geri', () => setMsg(S.source === 'demo' ? 'demo' : 'denied'));
+  } else if (kind === 'fatal') {
+    say(detail || 'Bu tarayıcı WebGL2 desteklemiyor; demo çalışamaz.');
+  }
+}
+function openStandalone() {
+  let w = null;
+  try { w = window.open(location.href, '_blank'); } catch (e) { w = null; }
+  if (w) { try { w.opener = null; } catch (e) { /* cross-origin */ } }
+  else setMsg('link');
+}
+
+/* ---------- WebGL setup ---------- */
+const gl = E.gl.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+if (!gl) { setMsg('fatal'); return; }
+
+const VS = `#version 300 es
+in vec2 aPos;
+void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+const HEAD = `#version 300 es
+precision highp float;
+precision highp sampler2D;
+out vec4 outColor;
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float hash13(vec3 p3){ p3 = fract(p3 * .1031); p3 += dot(p3, p3.zyx + 31.32); return fract((p3.x + p3.y) * p3.z); }
+float luma(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
+`;
+const SRC = `
+uniform sampler2D uSrc;
+uniform vec4 uCrop;
+uniform float uMirror;
+vec2 srcUV(vec2 uv){ uv.x = mix(uv.x, 1.0 - uv.x, uMirror); return uCrop.xy + uv * uCrop.zw; }
+`;
+
+const FS_METER = HEAD + SRC + `
+uniform float uLod;
+void main(){ vec2 uv = gl_FragCoord.xy / 4.0; outColor = vec4(textureLod(uSrc, srcUV(uv), uLod).rgb, 1.0); }`;
+
+/* CCD vertical smear: per column, the share of near-clipped pixels becomes a full-height streak */
+const FS_SMEAR = HEAD + SRC + `
+uniform float uW;
+uniform float uLod;
+void main(){
+  float x = gl_FragCoord.x / uW;
+  float acc = 0.0;
+  for (int i = 0; i < 160; i++) {
+    float y = (float(i) + 0.5) / 160.0;
+    acc += smoothstep(0.84, 0.985, luma(textureLod(uSrc, srcUV(vec2(x, y)), uLod).rgb));
+  }
+  outColor = vec4(acc / 160.0, 0.0, 0.0, 1.0);
+}`;
+
+/* sensor + camera DSP: lens, AF blur, gain, white balance, knee, saturation, detail halo, noise, smear, date burn-in */
+const FS_SENSOR = HEAD + SRC + `
+uniform sampler2D uSmear;
+uniform sampler2D uBurn;
+uniform vec2 uRes;
+uniform float uLod, uFocus, uGain, uFrame;
+uniform vec3 uWB;
+uniform mat3 uCM;
+uniform float uSat, uBlack, uKnee, uContrast, uSharp, uNoise, uCNoise, uSmearAmt, uBloom, uVig, uCA, uBurnOn;
+vec3 kneeC(vec3 x, float k){
+  vec3 t = clamp((x - k) / (1.0 - k), 0.0, 1.0);
+  vec3 sh = k + (1.0 - k) * (t + t * t - t * t * t);
+  return mix(x, sh, step(vec3(k), x));
+}
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 px = 1.0 / uRes;
+  float lod = uLod + uFocus;
+  vec2 cc = uv - 0.5;
+  float r2 = dot(cc, cc);
+  float ca = uCA * r2 * 4.0;
+  vec3 col;
+  col.r = textureLod(uSrc, srcUV(0.5 + cc * (1.0 + ca)), lod).r;
+  col.g = textureLod(uSrc, srcUV(uv), lod).g;
+  col.b = textureLod(uSrc, srcUV(0.5 + cc * (1.0 - ca)), lod).b;
+  if (uFocus > 0.05) {
+    float rr = uFocus * 1.3;
+    vec3 acc = col;
+    acc += textureLod(uSrc, srcUV(uv + vec2(rr, 0.0) * px), lod).rgb;
+    acc += textureLod(uSrc, srcUV(uv - vec2(rr, 0.0) * px), lod).rgb;
+    acc += textureLod(uSrc, srcUV(uv + vec2(0.0, rr) * px), lod).rgb;
+    acc += textureLod(uSrc, srcUV(uv - vec2(0.0, rr) * px), lod).rgb;
+    col = acc / 5.0;
+  }
+  float d = 1.25;
+  float lN = luma(textureLod(uSrc, srcUV(uv + vec2(0.0, d) * px), lod).rgb);
+  float lS = luma(textureLod(uSrc, srcUV(uv - vec2(0.0, d) * px), lod).rgb);
+  float lE = luma(textureLod(uSrc, srcUV(uv + vec2(d, 0.0) * px), lod).rgb);
+  float lW = luma(textureLod(uSrc, srcUV(uv - vec2(d, 0.0) * px), lod).rgb);
+  float hp = luma(col) - 0.25 * (lN + lS + lE + lW);
+
+  vec3 lin = col * col;
+  vec3 big = textureLod(uSrc, srcUV(uv), uLod + 3.5).rgb;
+  big *= big;
+  lin += max(big - 0.45, 0.0) * uBloom;
+  float sm = texture(uSmear, vec2(uv.x, 0.5)).r;
+  lin += vec3(1.0, 0.88, 1.0) * clamp(sm * 10.0, 0.0, 1.4) * uSmearAmt;
+  lin *= uGain * uWB;
+  lin *= 1.0 - uVig * smoothstep(0.08, 0.5, r2);
+
+  vec3 g = sqrt(max(lin, 0.0));
+  g = clamp(uCM * g, 0.0, 4.0);
+  g = kneeC(g, uKnee);
+  g = (g - 0.5) * uContrast + 0.5;
+  g = uBlack >= 0.0 ? uBlack + g * (1.0 - uBlack) : max(g + uBlack, 0.0) / (1.0 + uBlack);
+  float Y = luma(g);
+  g = mix(vec3(Y), g, uSat);
+  g += hp * uSharp * 1.7;
+
+  float gn = max(uGain, 1.0);
+  float n = hash13(vec3(gl_FragCoord.xy, uFrame)) - 0.5;
+  g += n * uNoise * gn * (1.15 - 0.75 * Y) * 2.0;
+  vec2 cq = floor(gl_FragCoord.xy / 2.0);
+  vec2 cn = vec2(hash13(vec3(cq, uFrame + 11.0)), hash13(vec3(cq, uFrame + 23.0))) - 0.5;
+  float camp = uCNoise * gn * (1.2 - Y);
+  g.r += cn.x * camp * 1.4;
+  g.b += cn.y * camp * 1.6;
+  g.g -= (cn.x + cn.y) * camp * 0.5;
+
+  vec4 b = texture(uBurn, uv);
+  g = mix(g, b.rgb, b.a * uBurnOn);
+  outColor = vec4(clamp(g, 0.0, 1.0), 1.0);
+}`;
+
+/* tape / codec: interlace weave, YIQ bandwidth, time base error, head switching, dropouts, DV/JPEG blocks */
+const FS_TAPE = HEAD + `
+uniform sampler2D uCur;
+uniform sampler2D uPrev;
+uniform vec2 uRes;
+uniform float uFrame, uTime, uPx;
+uniform float uInter, uFieldOrder, uLumaBlur, uRing, uChromaBlur, uChromaShift, uSubH, uSubV, uBlock;
+uniform float uJitter, uWave, uHead, uDrop, uSnow, uTapeSat, uTrack, uTrackPos, uDVErr, uHue;
+const mat3 RGB2YIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+const mat3 YIQ2RGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+vec3 fetchRow(float x, float row){
+  if (x < 0.0 || x > uRes.x) return vec3(0.02);
+  vec2 uv = vec2(x / uRes.x, (row + 0.5) / uRes.y);
+  if (uInter > 0.5 && mod(row + uFieldOrder, 2.0) > 0.5) return textureLod(uPrev, uv, 0.0).rgb;
+  return textureLod(uCur, uv, 0.0).rgb;
+}
+float rowOffset(float row){
+  float fromTop = uRes.y - 1.0 - row;
+  float off = (hash12(vec2(row, uFrame)) - 0.5) * uJitter;
+  off += (sin(row * 0.021 + uTime * 2.3) * 0.5 + sin(row * 0.0063 - uTime * 0.7)) * uWave;
+  off += uWave * 5.0 * exp(-fromTop / 12.0) * sin(uTime * 1.3);
+  if (row < 8.0) {
+    float t = 1.0 - row / 8.0;
+    off += uHead * (22.0 * t * t + (hash12(vec2(row, uFrame * 1.7)) - 0.5) * 8.0);
+  }
+  float band = smoothstep(0.07, 0.0, abs(row / uRes.y - uTrackPos)) * uTrack;
+  off += band * (hash12(vec2(row * 0.37, uFrame)) - 0.5) * 30.0;
+  return off * uPx;
+}
+void main(){
+  float row = floor(gl_FragCoord.y);
+  float x = gl_FragCoord.x + rowOffset(row);
+
+  float sL = max(uLumaBlur, 0.05);
+  float ys = 0.0, ws = 0.0;
+  for (int i = -3; i <= 3; i++) {
+    float fi = float(i);
+    float w = exp(-fi * fi / (2.0 * sL * sL));
+    ys += w * luma(fetchRow(x + fi, row));
+    ws += w;
+  }
+  float Y = ys / ws;
+  if (uRing > 0.0) {
+    float yw = 0.0, ww = 0.0;
+    for (int i = -2; i <= 2; i++) {
+      float fx = float(i) * 2.5;
+      float w = exp(-fx * fx / 18.0);
+      yw += w * luma(fetchRow(x + fx, row));
+      ww += w;
+    }
+    Y += (Y - yw / ww) * uRing;
+  }
+
+  float cx = x - uChromaShift;
+  if (uSubH > 1.5) cx = (floor(cx / uSubH) + 0.5) * uSubH;
+  float crow = uSubV > 1.5 ? floor(row / uSubV) * uSubV : row;
+  float sC = max(uChromaBlur, 0.3);
+  float stepC = max(1.0, sC / 2.0);
+  vec2 IQ = vec2(0.0);
+  float cw = 0.0;
+  for (int i = -4; i <= 4; i++) {
+    float fx = float(i) * stepC;
+    float w = exp(-fx * fx / (2.0 * sC * sC));
+    IQ += w * (RGB2YIQ * fetchRow(cx + fx, crow)).yz;
+    cw += w;
+  }
+  IQ /= cw;
+
+  if (uSnow > 0.0) {
+    float cxn = x / (6.0 * uPx);
+    float h0 = hash12(vec2(floor(cxn), row + mod(uFrame, 97.0) * 131.0));
+    float h1 = hash12(vec2(floor(cxn) + 1.0, row + mod(uFrame, 97.0) * 131.0));
+    float hn = mix(h0, h1, smoothstep(0.0, 1.0, fract(cxn))) - 0.5;
+    IQ += vec2(hn, -hn * 0.7) * uSnow * 0.9;
+    Y += (hash13(vec3(gl_FragCoord.xy, uFrame + 5.0)) - 0.5) * uSnow * 0.9;
+  }
+  if (uHue > 0.0) {
+    float a = (hash12(vec2(row * 0.5, uFrame + 9.0)) - 0.5) * uHue;
+    float cs = cos(a), sn = sin(a);
+    IQ = vec2(IQ.x * cs - IQ.y * sn, IQ.x * sn + IQ.y * cs);
+  }
+  IQ *= uTapeSat;
+
+  if (uBlock > 0.0) {
+    vec2 bc = (floor(gl_FragCoord.xy / 8.0) * 8.0 + 4.0) / uRes;
+    float mY = luma(textureLod(uCur, bc, 3.0).rgb);
+    float q = uBlock;
+    Y = mix(Y, mY, smoothstep(q * 2.5, 0.0, abs(Y - mY)) * min(uBlock * 12.0, 0.8));
+    Y = mY + floor((Y - mY) / q + 0.5) * q;
+  }
+  if (uDrop > 0.0) {
+    float hr = hash12(vec2(row, uFrame));
+    if (hr > 1.0 - uDrop) {
+      float st = hash12(vec2(row + 7.0, uFrame)) * uRes.x;
+      float ln = (20.0 + hash12(vec2(row + 3.0, uFrame)) * 140.0) * uPx;
+      float t = (gl_FragCoord.x - st) / ln;
+      if (t > 0.0 && t < 1.0) { float k = (1.0 - t) * 0.9; Y = mix(Y, 0.97, k); IQ *= 1.0 - k; }
+    }
+  }
+  if (uTrack > 0.0) {
+    float band = smoothstep(0.07, 0.0, abs(row / uRes.y - uTrackPos)) * uTrack;
+    float sp = step(0.985, hash13(vec3(floor(gl_FragCoord.x / (3.0 * uPx)), row, uFrame)));
+    Y = mix(Y, 1.0, sp * band);
+    Y += (hash13(vec3(gl_FragCoord.xy, uFrame + 1.0)) - 0.5) * band * 0.35;
+  }
+  vec3 rgb = YIQ2RGB * vec3(Y, IQ);
+  if (uDVErr > 0.0) {
+    vec2 blk = floor(gl_FragCoord.xy / vec2(16.0, 8.0));
+    if (hash13(vec3(blk, floor(uFrame / 2.0))) > 1.0 - uDVErr) rgb = textureLod(uPrev, (gl_FragCoord.xy + vec2(8.0, 0.0)) / uRes, 0.0).rgb;
+  }
+  outColor = vec4(clamp(rgb, 0.0, 1.0), 1.0);
+}`;
+
+/* output: integer line scaling (combs stay crisp), optional CRT, clean viewfinder layer */
+const FS_OUT = HEAD + `
+uniform sampler2D uTape;
+uniform sampler2D uOSD;
+uniform vec2 uOut, uRes;
+uniform float uCRT, uOSDOn;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uOut;
+  float rowF = uv.y * uRes.y;
+  float row = floor(rowF);
+  vec3 c = textureLod(uTape, vec2(uv.x, (row + 0.5) / uRes.y), 0.0).rgb;
+  if (uCRT > 0.0) {
+    float f = fract(rowF);
+    float s = 0.62 + 0.38 * smoothstep(0.0, 0.35, f) * smoothstep(1.0, 0.65, f);
+    c *= mix(1.0, s * 1.2, uCRT);
+    float m = mod(floor(gl_FragCoord.x), 3.0);
+    vec3 mask = m < 0.5 ? vec3(1.06, 0.94, 0.94) : (m < 1.5 ? vec3(0.94, 1.06, 0.94) : vec3(0.94, 0.94, 1.06));
+    c *= mix(vec3(1.0), mask, uCRT);
+  }
+  vec4 o = textureLod(uOSD, uv, 0.0);
+  c = mix(c, o.rgb, o.a * uOSDOn);
+  outColor = vec4(c, 1.0);
+}`;
+
+function compile(type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || 'shader');
+  return s;
+}
+let vsObj;
+function program(fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, vsObj); gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+  gl.bindAttribLocation(p, 0, 'aPos'); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) || 'link');
+  const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) { const name = gl.getActiveUniform(p, i).name.replace(/\[0\]$/, ''); u[name] = gl.getUniformLocation(p, name); }
+  return { p, u };
+}
+let PR;
+try {
+  vsObj = compile(gl.VERTEX_SHADER, VS);
+  PR = { meter: program(FS_METER), smear: program(FS_SMEAR), sensor: program(FS_SENSOR), tape: program(FS_TAPE), out: program(FS_OUT) };
+} catch (err) { console.error(err); setMsg('fatal', 'Shader derlenemedi: ' + String(err.message || err).slice(0, 160)); return; }
+
+const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+function params(t, minF, magF) {
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minF); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magF);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+function tex(w, h, mips) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texStorage2D(gl.TEXTURE_2D, mips ? Math.floor(Math.log2(Math.max(w, h))) + 1 : 1, gl.RGBA8, w, h);
+  params(t, mips ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR, gl.LINEAR); return t;
+}
+function mtex(minF, magF) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+  params(t, minF, magF); return t;
+}
+function fbo(t) {
+  const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); return f;
+}
+
+const T = { src: mtex(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR), burn: mtex(gl.LINEAR, gl.LINEAR), osd: mtex(gl.NEAREST, gl.NEAREST), meter: tex(4, 4, false) };
+gl.bindTexture(gl.TEXTURE_2D, T.src); gl.generateMipmap(gl.TEXTURE_2D);
+const F = { meter: fbo(T.meter) };
+let D = null, pp = 0, procCount = 0;
+
+const burnCv = document.createElement('canvas');
+const bctx = burnCv.getContext('2d');
+const octx = E.osd.getContext('2d');
+
+function dimsFor() {
+  const p = PRESETS[S.preset]; const r = S.fmt === '43' ? p.r43 : p.r916;
+  return { W: r[0], H: r[1], outW: S.fmt === '43' ? 1280 : 720, outH: S.fmt === '43' ? 960 : 1280 };
+}
+function alloc() {
+  const d = dimsFor();
+  if (D && d.W === D.W && d.H === D.H && d.outW === D.outW && d.outH === D.outH) return;
+  if (D) {
+    [T.smear, T.tape, ...T.sensor].forEach((t) => gl.deleteTexture(t));
+    [F.smear, F.tape, ...F.sensor].forEach((f) => gl.deleteFramebuffer(f));
+  }
+  D = d;
+  T.smear = tex(d.W, 1, false); F.smear = fbo(T.smear);
+  T.sensor = [tex(d.W, d.H, true), tex(d.W, d.H, true)]; F.sensor = T.sensor.map(fbo);
+  T.tape = tex(d.W, d.H, false); F.tape = fbo(T.tape);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  if (E.gl.width !== d.outW || E.gl.height !== d.outH) { E.gl.width = d.outW; E.gl.height = d.outH; }
+  burnCv.width = d.W; burnCv.height = d.H;
+  E.osd.width = d.outW / 2; E.osd.height = d.outH / 2;
+  pp = 0; drawBurn(true); drawOSD(true); layout();
+}
+function upload(t, cv) {
+  gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+}
+
+/* ---------- effective parameters (preset × layers × intensity) ---------- */
+let EFF = null;
+function effective() {
+  const p = PRESETS[S.preset], s = p.sensor, t = p.tape, k = S.intensity, d = dimsFor(), px = d.W / 640;
+  const on = (key) => (L[key] ? 1 : 0);
+  return {
+    px, sat: s.sat, black: s.black, knee: s.knee, contrast: s.contrast, wb: s.wb, cm: s.cm, bloom: s.bloom, vig: s.vig,
+    ca: s.ca * k, sharp: s.sharp * k * on('sharp'), ring: t.ring * k * on('sharp'),
+    smear: s.smear * Math.min(k, 1.3) * on('smear'),
+    noise: s.noise * k * on('noise'), cnoise: s.cnoise * k * on('noise'), snow: t.snow * k * on('noise'),
+    inter: t.inter * on('inter'), lumaBlur: t.lumaBlur * px,
+    chromaBlur: (L.bleed ? 1 + (t.chromaBlur - 1) * k : Math.min(t.chromaBlur, 1)) * px,
+    chromaShift: t.chromaShift * k * on('bleed') * px,
+    subH: t.subH, subV: t.subV, block: t.block * k, tapeSat: t.tapeSat,
+    jitter: t.jitter * k * on('jitter'), wave: t.wave * k * on('jitter'), hue: t.hue * k * on('jitter'),
+    head: t.head * Math.min(k, 1.2) * on('head'), drop: t.drop * k * on('head'), dvErr: t.dvErr * k * on('head'),
+    track: t.track * k * on('track'),
+  };
+}
+function refresh() { EFF = effective(); drawBurn(true); drawOSD(true); }
+
+/* ---------- camera brain: slow auto-exposure spring, AF hunts, tracking events ---------- */
+const brain = { gain: 1, vel: 0, L: 0.45, Ls: 0.45, focus: 0, hunt: -1, trackT: -1, nextTrack: 5 };
+function think(dt) {
+  const a = PRESETS[S.preset].ae;
+  const target = L.ae ? clamp(Math.pow(0.42 / Math.max(brain.L, 0.03), a.strength), a.min, a.max) : 1;
+  brain.vel += (a.k * (target - brain.gain) - a.c * brain.vel) * dt;
+  brain.gain = clamp(brain.gain + brain.vel * dt, 0.3, 3.5);
+  brain.Ls += (brain.L - brain.Ls) * Math.min(1, dt * 1.5);
+  if (L.af && brain.hunt < 0 && (Math.abs(brain.L - brain.Ls) > 0.12 || (brain.L < 0.2 && Math.random() < dt * 0.04))) brain.hunt = 0;
+  if (brain.hunt >= 0) {
+    brain.hunt += dt; const t = brain.hunt / 0.9;
+    if (t >= 1 || !L.af) { brain.hunt = -1; brain.focus = 0; brain.Ls = brain.L; }
+    else brain.focus = 2.4 * Math.pow(Math.sin(Math.PI * t), 2) * (1 - 0.4 * Math.sin(3 * Math.PI * t));
+  }
+  if (EFF && EFF.track > 0) {
+    brain.nextTrack -= dt;
+    if (brain.trackT < 0 && brain.nextTrack <= 0) { brain.trackT = 0; brain.nextTrack = 7 + Math.random() * 10; }
+  }
+  if (brain.trackT >= 0) { brain.trackT += dt; if (brain.trackT >= 1.3) brain.trackT = -1; }
+}
+
+/* async 4×4 meter readback: PBO + fence, never stalls the frame */
+const meter = { pbo: gl.createBuffer(), sync: null, data: new Uint8Array(64) };
+gl.bindBuffer(gl.PIXEL_PACK_BUFFER, meter.pbo); gl.bufferData(gl.PIXEL_PACK_BUFFER, 64, gl.STREAM_READ); gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+function meterKick(c, mirror) {
+  if (meter.sync) return;
+  pass(PR.meter, F.meter, 4, 4, (u) => {
+    gl.uniform1i(u.uSrc, 0); gl.uniform4f(u.uCrop, c.x0, c.y0, c.sx, c.sy); gl.uniform1f(u.uMirror, mirror);
+    gl.uniform1f(u.uLod, Math.max(0, Math.log2(Math.max(c.cw, c.ch) / 4) - 1));
+  });
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, meter.pbo);
+  gl.readPixels(0, 0, 4, 4, gl.RGBA, gl.UNSIGNED_BYTE, 0);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  meter.sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush();
+}
+function meterPoll() {
+  if (!meter.sync) return;
+  if (gl.getSyncParameter(meter.sync, gl.SYNC_STATUS) !== gl.SIGNALED) return;
+  gl.deleteSync(meter.sync); meter.sync = null;
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, meter.pbo); gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, meter.data); gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  let s = 0; for (let i = 0; i < 64; i += 4) s += 0.299 * meter.data[i] + 0.587 * meter.data[i + 1] + 0.114 * meter.data[i + 2];
+  brain.L = s / (16 * 255);
+}
+
+/* ---------- render passes ---------- */
+function pass(P, target, w, h, setup) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, target); gl.viewport(0, 0, w, h);
+  gl.useProgram(P.p); setup(P.u); gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+function bind(unit, t) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); }
+function cropFor(sw, sh, W, H) {
+  const A = W / H, s = sw / sh; let x0 = 0, y0 = 0, sx = 1, sy = 1;
+  if (s > A) { sx = A / s; x0 = (1 - sx) / 2; } else { sy = s / A; y0 = (1 - sy) / 2; }
+  const cw = sw * sx, ch = sh * sy;
+  return { x0, y0, sx, sy, cw, ch, lod: Math.max(0, Math.log2(Math.max(cw / W, ch / H))) };
+}
+function processFrame(el, sw, sh, time) {
+  const e = EFF, d = D;
+  bind(0, T.src);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, el); } catch (err) { return; }
+  gl.generateMipmap(gl.TEXTURE_2D);
+  const c = cropFor(sw, sh, d.W, d.H);
+  const mirror = S.source === 'cam' && S.facing === 'user' ? 1 : 0;
+  const frame = procCount % 4096;
+  if (procCount % 4 === 0) meterKick(c, mirror);
+
+  pass(PR.smear, F.smear, d.W, 1, (u) => {
+    gl.uniform1i(u.uSrc, 0); gl.uniform4f(u.uCrop, c.x0, c.y0, c.sx, c.sy); gl.uniform1f(u.uMirror, mirror);
+    gl.uniform1f(u.uW, d.W); gl.uniform1f(u.uLod, c.lod + 0.5);
+  });
+
+  bind(1, T.smear); bind(2, T.burn);
+  pass(PR.sensor, F.sensor[pp], d.W, d.H, (u) => {
+    gl.uniform1i(u.uSrc, 0); gl.uniform1i(u.uSmear, 1); gl.uniform1i(u.uBurn, 2);
+    gl.uniform4f(u.uCrop, c.x0, c.y0, c.sx, c.sy); gl.uniform1f(u.uMirror, mirror);
+    gl.uniform2f(u.uRes, d.W, d.H); gl.uniform1f(u.uLod, c.lod + 0.15); gl.uniform1f(u.uFocus, brain.focus);
+    gl.uniform1f(u.uGain, brain.gain); gl.uniform1f(u.uFrame, frame);
+    gl.uniform3f(u.uWB, e.wb[0], e.wb[1], e.wb[2]); gl.uniformMatrix3fv(u.uCM, true, e.cm);
+    gl.uniform1f(u.uSat, e.sat); gl.uniform1f(u.uBlack, e.black); gl.uniform1f(u.uKnee, e.knee); gl.uniform1f(u.uContrast, e.contrast);
+    gl.uniform1f(u.uSharp, e.sharp); gl.uniform1f(u.uNoise, e.noise); gl.uniform1f(u.uCNoise, e.cnoise);
+    gl.uniform1f(u.uSmearAmt, e.smear); gl.uniform1f(u.uBloom, e.bloom); gl.uniform1f(u.uVig, e.vig); gl.uniform1f(u.uCA, e.ca);
+    gl.uniform1f(u.uBurnOn, L.date ? 1 : 0);
+  });
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  bind(0, T.sensor[pp]); gl.generateMipmap(gl.TEXTURE_2D);
+
+  bind(1, T.sensor[1 - pp]);
+  const tk = brain.trackT >= 0 ? brain.trackT / 1.3 : -1;
+  pass(PR.tape, F.tape, d.W, d.H, (u) => {
+    gl.uniform1i(u.uCur, 0); gl.uniform1i(u.uPrev, 1);
+    gl.uniform2f(u.uRes, d.W, d.H); gl.uniform1f(u.uFrame, frame); gl.uniform1f(u.uTime, time % 1000); gl.uniform1f(u.uPx, e.px);
+    gl.uniform1f(u.uInter, e.inter); gl.uniform1f(u.uFieldOrder, 0);
+    gl.uniform1f(u.uLumaBlur, e.lumaBlur); gl.uniform1f(u.uRing, e.ring); gl.uniform1f(u.uChromaBlur, e.chromaBlur); gl.uniform1f(u.uChromaShift, e.chromaShift);
+    gl.uniform1f(u.uSubH, e.subH); gl.uniform1f(u.uSubV, e.subV); gl.uniform1f(u.uBlock, e.block);
+    gl.uniform1f(u.uJitter, e.jitter); gl.uniform1f(u.uWave, e.wave); gl.uniform1f(u.uHead, e.head); gl.uniform1f(u.uDrop, e.drop);
+    gl.uniform1f(u.uSnow, e.snow); gl.uniform1f(u.uTapeSat, e.tapeSat); gl.uniform1f(u.uHue, e.hue); gl.uniform1f(u.uDVErr, e.dvErr);
+    gl.uniform1f(u.uTrack, tk >= 0 ? Math.sin(Math.PI * tk) * 0.9 * e.track : 0); gl.uniform1f(u.uTrackPos, tk >= 0 ? 0.95 - tk * 0.9 : 0.5);
+  });
+
+  bind(0, T.tape); bind(1, T.osd);
+  pass(PR.out, null, d.outW, d.outH, (u) => {
+    gl.uniform1i(u.uTape, 0); gl.uniform1i(u.uOSD, 1);
+    gl.uniform2f(u.uOut, d.outW, d.outH); gl.uniform2f(u.uRes, d.W, d.H);
+    gl.uniform1f(u.uCRT, L.crt ? 1 : 0); gl.uniform1f(u.uOSDOn, L.vfBurn ? 1 : 0);
+  });
+  pp = 1 - pp; procCount++;
+}
+
+/* ---------- burned-in date (camera-side, goes through the tape) ---------- */
+const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+let burnKey = '';
+function outlined(ctx, text, x, y, fill, lw) {
+  ctx.lineJoin = 'round'; ctx.lineWidth = lw; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+  ctx.strokeText(text, x, y); ctx.fillStyle = fill; ctx.fillText(text, x, y);
+}
+function drawBurn(force) {
+  const now = new Date();
+  const key = [S.preset, S.fmt, L.date, L.rewind, now.getSeconds(), now.getMinutes(), fontsReady].join('|');
+  if (!force && key === burnKey) return; burnKey = key;
+  const W = burnCv.width, H = burnCv.height; bctx.clearRect(0, 0, W, H);
+  if (L.date && W > 1) {
+    const p = PRESETS[S.preset];
+    const Y = L.rewind ? p.year : now.getFullYear();
+    const h24 = now.getHours(), h12 = ((h24 + 11) % 12) + 1, ap = h24 < 12 ? 'AM' : 'PM';
+    const mm = pad2(now.getMinutes()), ss = pad2(now.getSeconds()), mon = MON[now.getMonth()], day = now.getDate();
+    const fs = Math.round(Math.min(W, H) * 0.078), lw = Math.max(2, fs * 0.14), mx = W * 0.075;
+    bctx.font = `${fs}px ${OSDF}`; bctx.textBaseline = 'alphabetic';
+    const y2 = H - H * 0.075, y1 = y2 - fs * 1.02;
+    if (S.preset === 'dv') {
+      bctx.textAlign = 'right';
+      outlined(bctx, `${mon} ${day} ${Y}`, W - mx, y1, '#FFFFFF', lw);
+      outlined(bctx, `${h12}:${mm}:${ss} ${ap}`, W - mx, y2, '#FFFFFF', lw);
+    } else if (S.preset === 'vhs') {
+      bctx.textAlign = 'left';
+      outlined(bctx, `${ap} ${h12}:${mm}`, mx, y1, '#FFFFFF', lw);
+      outlined(bctx, `${mon}. ${day} ${Y}`, mx, y2, '#FFFFFF', lw);
+    } else {
+      bctx.textAlign = 'right'; bctx.save();
+      bctx.shadowColor = 'rgba(255,140,40,0.9)'; bctx.shadowBlur = fs * 0.35;
+      bctx.fillStyle = '#FF9A2E'; bctx.fillText(`${Y}/${pad2(now.getMonth() + 1)}/${pad2(day)}`, W - mx, y2);
+      bctx.restore();
+    }
+  }
+  upload(T.burn, burnCv);
+}
+
+/* ---------- viewfinder OSD (clean layer, optional in the recording) ---------- */
+let osdKey = '';
+function battery(ctx, x, y, w, h) {
+  ctx.lineWidth = Math.max(2, h * 0.14); ctx.strokeStyle = '#000'; ctx.fillStyle = '#FFF';
+  ctx.strokeRect(x - 1, y - 1, w + 2, h + 2); ctx.fillRect(x + w, y + h * 0.3, h * 0.18, h * 0.4);
+  ctx.strokeStyle = '#FFF'; ctx.lineWidth = Math.max(1.5, h * 0.1); ctx.strokeRect(x, y, w, h);
+  const gap = w * 0.06, bw = (w - gap * 4) / 3;
+  for (let i = 0; i < 3; i++) ctx.fillRect(x + gap + i * (bw + gap), y + h * 0.2, bw, h * 0.6);
+}
+function drawOSD(force) {
+  const now = performance.now();
+  const el = S.recording ? Math.floor((now - S.recStart) / 1000) : 0;
+  const blink = Math.floor(now / 500) % 2, banner = now < S.banner;
+  const key = [S.preset, S.fmt, S.recording, el, blink, banner, L.vfBurn, fontsReady].join('|');
+  if (!force && key === osdKey) return; osdKey = key;
+  const W = E.osd.width, H = E.osd.height; if (W < 2) return;
+  octx.clearRect(0, 0, W, H);
+  const fs = Math.round(Math.min(W, H) * 0.075), lw = Math.max(2, fs * 0.14);
+  const mx = W * 0.06, top = H * 0.1, bot = H * 0.93;
+  octx.font = `${fs}px ${OSDF}`; octx.textBaseline = 'alphabetic';
+  const tc = `0:${pad2(Math.floor(el / 60) % 60)}:${pad2(el % 60)}`;
+  const recMark = (x, showDot) => {
+    if (showDot) {
+      octx.beginPath(); octx.arc(x + fs * 0.28, top - fs * 0.3, fs * 0.28, 0, Math.PI * 2);
+      octx.fillStyle = '#F2321F'; octx.strokeStyle = '#000'; octx.lineWidth = lw * 0.7; octx.fill(); octx.stroke();
+    }
+    return x + fs * 0.75;
+  };
+  octx.textAlign = 'left';
+  if (S.preset === 'dv' || S.preset === 'vhs') {
+    if (S.recording) outlined(octx, 'REC', recMark(mx, true), top, '#FFFFFF', lw);
+    else outlined(octx, 'STBY', mx, top, '#FFFFFF', lw);
+  } else {
+    if (S.recording) outlined(octx, `${Math.floor(el / 60)}:${pad2(el % 60)}`, recMark(mx, blink === 0), top, '#FFFFFF', lw);
+    else {
+      octx.fillStyle = '#FFF'; octx.strokeStyle = '#000'; octx.lineWidth = lw * 0.6;
+      const w = fs * 0.8, h = fs * 0.55, y = top - fs * 0.62;
+      octx.strokeRect(mx, y, w, h); octx.fillRect(mx, y, w, h);
+      octx.beginPath(); octx.moveTo(mx + w + fs * 0.08, y + h * 0.5); octx.lineTo(mx + w + fs * 0.42, y + h * 0.1); octx.lineTo(mx + w + fs * 0.42, y + h * 0.9); octx.closePath(); octx.fill(); octx.stroke();
+      outlined(octx, '320', mx + fs * 1.4, top, '#FFFFFF', lw);
+    }
+  }
+  const bw = fs * 1.25, bh = fs * 0.58;
+  if (S.preset === 'dv') {
+    battery(octx, W - mx - bw - fs * 0.2, top - bh - fs * 0.05, bw, bh);
+    octx.textAlign = 'right'; outlined(octx, '60min', W - mx - bw - fs * 0.55, top, '#FFFFFF', lw);
+    octx.textAlign = 'left'; outlined(octx, tc, mx, bot, '#FFFFFF', lw);
+  } else if (S.preset === 'vhs') {
+    octx.textAlign = 'right'; outlined(octx, 'SP', W - mx, top, '#FFFFFF', lw);
+    outlined(octx, tc, W - mx, bot, '#FFFFFF', lw);
+  } else {
+    battery(octx, W - mx - bw - fs * 0.2, top - bh - fs * 0.05, bw, bh);
+  }
+  if (banner) { octx.textAlign = 'center'; outlined(octx, PRESETS[S.preset].banner, W / 2, H * 0.5 + fs * 0.3, '#FFFFFF', lw); }
+  upload(T.osd, E.osd);
+}
+
+/* ---------- demo scene: dusk street with lamps, headlights, neon (smear + bleed + combing sources) ---------- */
+const scene = document.createElement('canvas'); scene.width = 960; scene.height = 720;
+const sx = scene.getContext('2d');
+function rng(seed) { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
+const skyline = document.createElement('canvas'); skyline.width = 1040; skyline.height = 520;
+(() => {
+  const c = skyline.getContext('2d'), r = rng(11);
+  let x = 0;
+  while (x < 1040) {
+    const bw = 44 + r() * 70, bh = 60 + r() * 90;
+    if (!(x + bw > 600 && x < 760)) { c.fillStyle = '#2B2E4C'; c.fillRect(x, 500 - bh, bw, bh + 20); }
+    x += bw + 4;
+  }
+  x = -10;
+  while (x < 1040) {
+    const bw = 70 + r() * 110, bh = 150 + r() * 230;
+    if (!(x + bw > 590 && x < 770)) {
+      c.fillStyle = '#15172B'; c.fillRect(x, 500 - bh, bw, bh + 20);
+      for (let wy = 500 - bh + 14; wy < 486; wy += 22) for (let wx = x + 10; wx < x + bw - 12; wx += 18) {
+        if (r() < 0.36) { c.fillStyle = r() < 0.8 ? '#FFD58A' : '#BFE3FF'; c.fillRect(wx, wy, 8, 11); }
+      }
+    }
+    x += bw + 6;
+  }
+})();
+function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function glow(c, x, y, core, R, rgb) {
+  const g = c.createRadialGradient(x, y, core * 0.5, x, y, R);
+  g.addColorStop(0, `rgba(${rgb},0.95)`); g.addColorStop(0.25, `rgba(${rgb},0.35)`); g.addColorStop(1, `rgba(${rgb},0)`);
+  c.fillStyle = g; c.fillRect(x - R, y - R, R * 2, R * 2);
+  c.fillStyle = '#FFFFFA'; c.beginPath(); c.arc(x, y, core, 0, Math.PI * 2); c.fill();
+}
+function car(c, x, y, s, dir, body, roof) {
+  c.save(); c.translate(x, y); c.scale(s * dir, s);
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(-6, 76, 232, 8);
+  c.fillStyle = body; rrect(c, 0, 26, 220, 42, 12); c.fill();
+  c.fillStyle = roof; rrect(c, 40, 0, 122, 32, 12); c.fill();
+  c.fillStyle = '#26314E'; rrect(c, 50, 6, 48, 22, 4); c.fill(); rrect(c, 104, 6, 48, 22, 4); c.fill();
+  c.fillStyle = '#0C0C0F'; c.beginPath(); c.arc(50, 70, 17, 0, Math.PI * 2); c.arc(172, 70, 17, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#6B6D74'; c.beginPath(); c.arc(50, 70, 6, 0, Math.PI * 2); c.arc(172, 70, 6, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#FF2A2A'; c.fillRect(0, 36, 6, 12);
+  c.restore();
+  glow(c, x + dir * s * 214, y + s * 42, s * 6, s * 90, '255,248,230');
+}
+function drawScene(t) {
+  const w = 960, h = 720;
+  sx.save();
+  const shx = Math.sin(t * 1.7) * 4 + Math.sin(t * 4.3) * 1.6, shy = Math.cos(t * 1.3) * 3 + Math.sin(t * 5.1) * 1.2;
+  sx.translate(w / 2 + shx, h / 2 + shy); sx.rotate(Math.sin(t * 0.9) * 0.006); sx.scale(1.05, 1.05); sx.translate(-w / 2, -h / 2);
+  const g = sx.createLinearGradient(0, 0, 0, 500);
+  g.addColorStop(0, '#1B2350'); g.addColorStop(0.55, '#B85A78'); g.addColorStop(1, '#F4A55C');
+  sx.fillStyle = g; sx.fillRect(-60, -60, w + 120, 580);
+  glow(sx, 668, 430, 30, 210, '255,236,196');
+  sx.drawImage(skyline, -40, 0);
+  sx.fillStyle = '#2B2B33'; sx.fillRect(-60, 500, w + 120, 22);
+  sx.fillStyle = '#1B1B21'; sx.fillRect(-60, 522, w + 120, 260);
+  sx.fillStyle = '#D9C27A'; const off = (t * 160) % 120;
+  for (let x = -120; x < w + 160; x += 120) sx.fillRect(x - off, 640, 60, 6);
+  sx.fillStyle = '#0E0F14'; sx.fillRect(170, 262, 250, 78);
+  const flick = (Math.sin(t * 23) + Math.sin(t * 37)) > 1.62 ? 0.3 : 1;
+  sx.save(); sx.font = '800 58px "Archivo", Arial, sans-serif'; sx.textAlign = 'center'; sx.textBaseline = 'middle';
+  sx.shadowColor = `rgba(255,45,60,${0.95 * flick})`; sx.shadowBlur = 26; sx.fillStyle = `rgba(255,${70 + 70 * flick},${80 + 50 * flick},${flick})`;
+  sx.fillText('DINER', 295, 302); sx.restore();
+  for (const lx of [110, 470, 880]) {
+    sx.fillStyle = '#101117'; sx.fillRect(lx - 3, 320, 6, 190); sx.fillRect(lx - 3, 320, 44, 5);
+    glow(sx, lx + 40, 330, 7, 70, '255,226,170');
+  }
+  const cxA = ((t * 190) % (w + 460)) - 260;
+  car(sx, cxA, 548, 1, 1, '#C0392F', '#A8322A');
+  const cxB = w + 200 - ((t * 120 + 500) % (w + 460));
+  car(sx, cxB, 520, 0.62, -1, '#2F7F8F', '#276C79');
+  sx.restore();
+}
+
+/* ---------- sources ---------- */
+let camStream = null, fileURL = null, lastDemo = 0, videoFresh = false, lastVT = -1, lastRVFC = 0, lastPoll = 0;
+const hasRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+const armed = new WeakSet();
+function arm(v) {
+  if (!hasRVFC || armed.has(v)) return; armed.add(v);
+  const cb = () => { videoFresh = true; lastRVFC = performance.now(); v.requestVideoFrameCallback(cb); };
+  v.requestVideoFrameCallback(cb);
+}
+function stopCamera() { if (camStream) { camStream.getTracks().forEach((t) => t.stop()); camStream = null; } E.cam.srcObject = null; }
+function markSource() { document.querySelectorAll('.src-opt').forEach((b) => b.setAttribute('aria-current', String(b.dataset.src === S.source))); }
+let exporting = false;
+function endExportSilently() { if (exporting) { exporting = false; if (S.recording) stopRec(); } }
+async function openCamera() {
+  endExportSilently();
+  ensureAudio();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setMsg('unsupported'); return; }
+  stopCamera();
+  const v = { facingMode: { ideal: S.facing }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } };
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: v, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  } catch (e) {
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: v }); }
+    catch (e2) { camErr(e2); return; }
+  }
+  camStream = stream; E.cam.srcObject = stream; E.cam.muted = true;
+  try { await E.cam.play(); } catch (e) { /* muted inline playback */ }
+  arm(E.cam); E.fv.pause();
+  S.source = 'cam'; markSource(); connectInput(); setMsg(null); E.flip.hidden = false;
+  toast(stream.getAudioTracks().length ? 'Kamera açık' : 'Kamera açık; mikrofon izni yok, kayıt sessiz olacak');
+}
+function camErr(e) {
+  const n = e && e.name;
+  console.warn('getUserMedia:', n, e && e.message);
+  if (n === 'NotAllowedError' || n === 'SecurityError') setMsg('denied');
+  else if (n === 'NotFoundError' || n === 'OverconstrainedError' || n === 'NotReadableError') setMsg('nocam');
+  else setMsg('unsupported');
+}
+function pickFile() { ensureAudio(); E.file.click(); }
+function shoot() { ensureAudio(); E.capture.click(); }
+function waitEvt(el, ev, ms) {
+  return new Promise((res) => { let done = false; const f = () => { if (!done) { done = true; res(); } }; el.addEventListener(ev, f, { once: true }); setTimeout(f, ms); });
+}
+async function loadClip(f) {
+  if (!f) return;
+  endExportSilently(); if (S.recording) stopRec();
+  stopCamera(); if (fileURL) URL.revokeObjectURL(fileURL);
+  fileURL = URL.createObjectURL(f);
+  const v = E.fv; v.loop = true; v.muted = true; v.src = fileURL;
+  arm(v); S.source = 'file'; markSource(); connectInput(); E.flip.hidden = true;
+  if (v.readyState < 1) await waitEvt(v, 'loadedmetadata', 5000);
+  if (!v.videoWidth) { toast('Bu video açılamadı'); useDemo(); return; }
+  try { await v.play(); } catch (e) { /* preview starts with "Kasete aktar" */ }
+  setMsg('clip');
+}
+E.file.addEventListener('change', () => { const f = E.file.files && E.file.files[0]; E.file.value = ''; loadClip(f); });
+E.capture.addEventListener('change', () => { const f = E.capture.files && E.capture.files[0]; E.capture.value = ''; loadClip(f); });
+/* one real-time pass through the tape, recorded with the clip's own sound; play() stays inside the tap for iOS */
+function exportClip() {
+  if (S.source !== 'file' || exporting || S.recording) return;
+  const v = E.fv;
+  ensureAudio(); connectInput();
+  v.loop = false; v.muted = false;
+  try { v.currentTime = 0; } catch (e) { /* not seekable yet */ }
+  const played = v.play();
+  exporting = true; setMsg('exporting');
+  Promise.resolve(played)
+    .catch(() => { v.muted = true; return v.play(); })
+    .then(() => (v.seeking ? waitEvt(v, 'seeked', 1000) : null))
+    .then(() => { if (!exporting) return; startRec(); if (!S.recording) { exporting = false; restorePreview(); setMsg('clip'); } })
+    .catch(() => { exporting = false; restorePreview(); setMsg('clip'); toast('Klip oynatılamadı'); });
+}
+function restorePreview() { const v = E.fv; v.loop = true; v.muted = true; if (v.paused) v.play().catch(() => {}); }
+function finishExport() {
+  if (!exporting) return;
+  exporting = false;
+  if (S.recording) stopRec();
+  restorePreview(); setMsg('clip');
+}
+E.fv.addEventListener('timeupdate', () => { if (exporting) E.msgText.textContent = `Kasete aktarılıyor · ${fmtDur(E.fv.currentTime)} / ${fmtDur(E.fv.duration)}`; });
+E.fv.addEventListener('ended', () => { if (exporting) finishExport(); });
+function useDemo() { endExportSilently(); stopCamera(); E.fv.pause(); S.source = 'demo'; markSource(); connectInput(); setMsg('demo'); E.flip.hidden = true; }
+
+/* ---------- audio: highpass/lowpass, wow/flutter delay, AGC compressor, hiss ---------- */
+const AUD = { ctx: null, dest: null, nodes: null, input: null, fileSrc: null, hasInput: false };
+function ensureAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+  if (!AUD.ctx) {
+    try { AUD.ctx = new AC(); } catch (e) { return null; }
+    const c = AUD.ctx; AUD.dest = c.createMediaStreamDestination();
+    const hp = c.createBiquadFilter(); hp.type = 'highpass';
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+    const delay = c.createDelay(0.05); delay.delayTime.value = 0.012;
+    const wowO = c.createOscillator(); wowO.frequency.value = 0.55; const wowG = c.createGain(); wowG.gain.value = 0; wowO.connect(wowG); wowG.connect(delay.delayTime);
+    const flO = c.createOscillator(); flO.frequency.value = 7.3; const flG = c.createGain(); flG.gain.value = 0; flO.connect(flG); flG.connect(delay.delayTime);
+    wowO.start(); flO.start();
+    const comp = c.createDynamicsCompressor(); comp.knee.value = 8; comp.attack.value = 0.004; comp.release.value = 0.55;
+    const makeup = c.createGain(); makeup.gain.value = 1.6;
+    const out = c.createGain(); const mon = c.createGain(); mon.gain.value = 0;
+    hp.connect(lp); lp.connect(delay); delay.connect(comp); comp.connect(makeup); makeup.connect(out);
+    out.connect(AUD.dest); out.connect(mon); mon.connect(c.destination);
+    const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate); const ch = buf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    const ns = c.createBufferSource(); ns.buffer = buf; ns.loop = true;
+    const nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 5000; nf.Q.value = 0.4;
+    const ng = c.createGain(); ng.gain.value = 0; ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start();
+    AUD.nodes = { hp, lp, wowG, flG, comp, ng, mon };
+    applyAudio();
+  }
+  if (AUD.ctx.state === 'suspended') AUD.ctx.resume().catch(() => {});
+  return AUD.ctx;
+}
+function applyAudio() {
+  if (!AUD.nodes) return; const a = PRESETS[S.preset].audio, n = AUD.nodes;
+  n.hp.frequency.value = a.hp; n.lp.frequency.value = a.lp; n.comp.threshold.value = a.thr; n.comp.ratio.value = a.ratio;
+  n.ng.gain.value = a.hiss; n.wowG.gain.value = a.wow; n.flG.gain.value = a.wow * 0.18;
+}
+function connectInput() {
+  if (!AUD.ctx) return;
+  if (AUD.input) { try { AUD.input.disconnect(); } catch (e) { /* already detached */ } AUD.input = null; }
+  AUD.hasInput = false; AUD.nodes.mon.gain.value = 0;
+  if (S.source === 'cam' && camStream && camStream.getAudioTracks().length) {
+    AUD.input = AUD.ctx.createMediaStreamSource(camStream); AUD.input.connect(AUD.nodes.hp); AUD.hasInput = true;
+  } else if (S.source === 'file') {
+    try { if (!AUD.fileSrc) AUD.fileSrc = AUD.ctx.createMediaElementSource(E.fv); AUD.input = AUD.fileSrc; AUD.input.connect(AUD.nodes.hp); AUD.hasInput = true; AUD.nodes.mon.gain.value = 1; }
+    catch (e) { AUD.hasInput = false; }
+  }
+}
+
+/* ---------- recording ---------- */
+let rec = null, chunks = [], clip = null;
+function pickMime(withAudio) {
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  const list = withAudio
+    ? ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+    : ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  return list.find((m) => MediaRecorder.isTypeSupported(m)) || '';
+}
+function setRecUI(on) {
+  E.rec.setAttribute('aria-pressed', String(on)); E.rec.setAttribute('aria-label', on ? 'Kaydı durdur' : 'Kaydı başlat');
+  document.body.classList.toggle('is-rec', on);
+}
+function startRec() {
+  if (!window.MediaRecorder || !E.gl.captureStream) { toast('Bu tarayıcı kayıt almıyor'); return; }
+  ensureAudio();
+  const vs = E.gl.captureStream(30);
+  const at = AUD.dest && AUD.hasInput ? AUD.dest.stream.getAudioTracks() : [];
+  const ms = new MediaStream([...vs.getVideoTracks(), ...at]);
+  const mime = pickMime(at.length > 0);
+  try { rec = mime ? new MediaRecorder(ms, { mimeType: mime, videoBitsPerSecond: 8000000, audioBitsPerSecond: 128000 }) : new MediaRecorder(ms); }
+  catch (e) { toast('Kayıt başlatılamadı'); return; }
+  chunks = [];
+  rec.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
+  rec.onstop = finishRec;
+  rec.start(1000); S.recording = true; S.recStart = performance.now(); setRecUI(true); drawOSD(true);
+}
+function stopRec() { if (rec && rec.state !== 'inactive') { S.recDur = (performance.now() - S.recStart) / 1000; rec.stop(); } S.recording = false; setRecUI(false); drawOSD(true); }
+function finishRec() {
+  const type = (rec && rec.mimeType) || (chunks[0] && chunks[0].type) || 'video/webm';
+  const blob = new Blob(chunks, { type }); chunks = [];
+  if (!blob.size) { toast('Kayıt boş geldi'); return; }
+  if (clip) URL.revokeObjectURL(clip.url);
+  const ext = type.includes('mp4') ? 'mp4' : 'webm';
+  const d = new Date();
+  const name = `kaset-${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}.${ext}`;
+  clip = { blob, url: URL.createObjectURL(blob), name, ext, dur: S.recDur || 0 };
+  E.clip.disabled = false;
+  showClip();
+}
+function showClip() {
+  if (!clip) return;
+  E.clipVideo.src = clip.url;
+  const s = Math.round(clip.dur);
+  E.clipInfo.textContent = `${Math.floor(s / 60)}:${pad2(s % 60)} · ${clip.ext} · ${(clip.blob.size / 1048576).toFixed(1)} MB · ${D.outW}×${D.outH}`;
+  E.share.hidden = !(navigator.canShare && navigator.share);
+  showSheet(E.clipSheet);
+}
+const dlP = window.claude && typeof window.claude.use === 'function' ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+async function saveClip() {
+  if (!clip) return;
+  const dl = await dlP;
+  if (dl) {
+    try { await dl.save({ filename: clip.name, data: clip.blob }); toast('Kaydedildi'); }
+    catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') toast('Kaydetme iptal edildi');
+      else if (code === 'rate_limited') toast('Bir kaydetme penceresi zaten açık');
+      else fallbackSave();
+    }
+    return;
+  }
+  fallbackSave();
+}
+function fallbackSave() {
+  if (!framed) {
+    const a = document.createElement('a'); a.href = clip.url; a.download = clip.name;
+    document.body.appendChild(a); a.click(); a.remove(); toast('İndirme başladı');
+  } else toast('Bu görünümde kaydetme kapalı. Sayfayı ayrı sekmede aç ya da Paylaş’ı dene.');
+}
+async function shareClip() {
+  if (!clip) return;
+  const file = new File([clip.blob], clip.name, { type: clip.blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: 'kaset' }); }
+    catch (e) { if (e && e.name !== 'AbortError') toast('Paylaşım bu görünümde açılmadı; Kaydet’i dene'); }
+  } else toast('Bu tarayıcı dosya paylaşmıyor; Kaydet’i dene');
+}
+
+/* ---------- sheets ---------- */
+let openSheet = null, lastFocus = null;
+function showSheet(el) {
+  if (openSheet && openSheet !== el) hideSheet(openSheet, true);
+  lastFocus = document.activeElement; openSheet = el;
+  const peek = el.classList.contains('peek');
+  E.scrim.classList.toggle('clear', peek);
+  if (peek) {
+    const top = E.stage.getBoundingClientRect().top, bz = E.lcd.parentElement.getBoundingClientRect().top;
+    E.stage.style.setProperty('--lift', `${Math.min(0, Math.round(top + 2 - bz))}px`);
+  }
+  E.scrim.hidden = false; el.hidden = false;
+  requestAnimationFrame(() => { el.classList.add('open'); E.scrim.classList.add('on'); });
+  const f = el.querySelector('[data-close]'); if (f) f.focus({ preventScroll: true });
+}
+function hideSheet(el, instant) {
+  if (!el) return;
+  el.classList.remove('open'); E.scrim.classList.remove('on');
+  E.stage.style.setProperty('--lift', '0px');
+  const done = () => { el.hidden = true; if (!openSheet) E.scrim.hidden = true; };
+  if (openSheet === el) openSheet = null;
+  if (el === E.clipSheet) E.clipVideo.pause();
+  if (instant) done(); else setTimeout(done, 300);
+  if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+}
+E.scrim.addEventListener('click', () => hideSheet(openSheet));
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => hideSheet(openSheet)));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && openSheet) hideSheet(openSheet); });
+
+function renderLayers() {
+  const p = PRESETS[S.preset]; let html = '', group = '';
+  for (const it of LAYERS) {
+    if (it.g !== group) { if (group) html += '</div>'; html += `<div class="lg"><h3>${it.g}</h3>`; group = it.g; }
+    const has = it.has(p);
+    html += `<div class="lrow${has ? '' : ' na'}"><div class="lt"><span class="ln">${it.n}</span><span class="lw">${has ? it.w : 'Bu kasette yok.'}</span></div>` +
+      `<button class="sw" type="button" role="switch" aria-checked="${has && L[it.k]}" aria-label="${it.n}" data-k="${it.k}"${has ? '' : ' disabled'}><i></i></button></div>`;
+  }
+  E.layerList.innerHTML = html + '</div>';
+}
+E.layerList.addEventListener('click', (e) => {
+  const b = e.target.closest('.sw'); if (!b || b.disabled) return;
+  const k = b.dataset.k; L[k] = !L[k]; b.setAttribute('aria-checked', String(L[k]));
+  if (k === 'vfBurn') E.osd.hidden = L.vfBurn;
+  refresh();
+});
+E.amt.addEventListener('input', () => { S.intensity = Number(E.amt.value) / 100; E.amtVal.textContent = `${E.amt.value}%`; EFF = effective(); });
+
+/* ---------- controls ---------- */
+function setPreset(k) {
+  if (k === S.preset) return;
+  S.preset = k;
+  E.tapes.forEach((b) => { const on = b.dataset.preset === k; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
+  alloc(); EFF = effective(); applyAudio(); renderLayers();
+  S.banner = performance.now() + 1500; brain.trackT = -1; brain.nextTrack = 3;
+  drawOSD(true); drawBurn(true);
+}
+E.tapes.forEach((b) => b.addEventListener('click', () => setPreset(b.dataset.preset)));
+$('#tapes').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const keys = E.tapes.map((b) => b.dataset.preset); let i = keys.indexOf(S.preset);
+  i = (i + (e.key === 'ArrowRight' ? 1 : keys.length - 1)) % keys.length;
+  setPreset(keys[i]); E.tapes[i].focus(); e.preventDefault();
+});
+E.fmt.addEventListener('click', () => {
+  if (S.recording) { toast('Kayıt sırasında en-boy değişmez'); return; }
+  S.fmt = S.fmt === '43' ? '916' : '43';
+  E.fmt.textContent = S.fmt === '43' ? '4:3' : '9:16';
+  E.fmt.setAttribute('aria-label', S.fmt === '43' ? 'En-boy oranı 4:3. Dikeye geçmek için dokun.' : 'En-boy oranı 9:16. Yataya geçmek için dokun.');
+  alloc(); EFF = effective();
+});
+E.flip.addEventListener('click', () => { if (S.recording) { toast('Kayıt sırasında kamera değişmez'); return; } S.facing = S.facing === 'environment' ? 'user' : 'environment'; openCamera(); });
+E.layers.addEventListener('click', () => { renderLayers(); showSheet(E.layersSheet); });
+E.src.addEventListener('click', () => showSheet(E.srcSheet));
+document.querySelectorAll('.src-opt').forEach((b) => b.addEventListener('click', () => {
+  const s = b.dataset.src; hideSheet(E.srcSheet, true);
+  if (S.recording && s !== S.source) { toast('Önce kaydı durdur'); return; }
+  if (s === 'cam') openCamera(); else if (s === 'shoot') shoot(); else if (s === 'file') pickFile(); else useDemo();
+}));
+E.rec.addEventListener('click', () => {
+  if (S.recording) { if (exporting) finishExport(); else stopRec(); }
+  else if (S.source === 'file') exportClip();
+  else startRec();
+});
+E.clip.addEventListener('click', showClip);
+E.save.addEventListener('click', saveClip);
+E.share.addEventListener('click', shareClip);
+E.del.addEventListener('click', () => {
+  if (clip) URL.revokeObjectURL(clip.url);
+  clip = null; E.clipVideo.removeAttribute('src'); E.clipVideo.load(); E.clip.disabled = true;
+  hideSheet(E.clipSheet); toast('Kayıt silindi');
+});
+
+/* ---------- layout: fit the LCD to the stage at the tape's aspect ---------- */
+function layout() {
+  const r = E.stage.getBoundingClientRect(); if (!r.width || !r.height) return;
+  const ar = S.fmt === '43' ? 4 / 3 : 9 / 16;
+  const mh = E.msg.hidden ? 0 : E.msg.getBoundingClientRect().height + 10;
+  let w = r.width - 16, h = r.height - 16 - mh;
+  if (w / h > ar) w = h * ar; else h = w / ar;
+  E.lcd.style.width = `${Math.max(80, Math.floor(w))}px`; E.lcd.style.height = `${Math.max(60, Math.floor(h))}px`;
+}
+if ('ResizeObserver' in window) new ResizeObserver(layout).observe(E.stage);
+window.addEventListener('resize', layout);
+
+/* ---------- main loop ---------- */
+let last = performance.now(), fresh = 0;
+function loop(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  think(dt); meterPoll();
+  let el = null, w = 0, h = 0;
+  if (S.source === 'demo') {
+    if (now - lastDemo >= 32) { lastDemo = now; drawScene(now / 1000); el = scene; w = 960; h = 720; }
+  } else {
+    const v = S.source === 'cam' ? E.cam : E.fv;
+    if (v.readyState >= 2 && v.videoWidth) {
+      const alive = hasRVFC && now - lastRVFC < 400;
+      const isNew = alive ? videoFresh : (v.currentTime !== lastVT && now - lastPoll >= 30);
+      if (isNew) { videoFresh = false; lastVT = v.currentTime; lastPoll = now; el = v; w = v.videoWidth; h = v.videoHeight; }
+    }
+  }
+  if (el) {
+    fresh++;
+    const div = PRESETS[S.preset].fps === 15 ? 2 : 1;
+    if (fresh % div === 0) processFrame(el, w, h, now / 1000);
+  }
+  drawOSD(false); drawBurn(false);
+  requestAnimationFrame(loop);
+}
+
+E.gl.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setMsg('fatal', 'Grafik bağlamı kayboldu. Sayfayı yenile.'); });
+
+let fontsReady = false;
+if (document.fonts && document.fonts.load) {
+  Promise.all([document.fonts.load(`40px ${OSDF}`), document.fonts.load('800 58px "Archivo"'), document.fonts.load('15px "Permanent Marker"')])
+    .then(() => { fontsReady = true; drawOSD(true); drawBurn(true); }).catch(() => {});
+}
+
+E.osd.hidden = L.vfBurn;
+alloc(); EFF = effective(); renderLayers(); setMsg('demo'); layout();
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  E.power.classList.add('on'); setTimeout(() => E.power.classList.remove('on'), 1200);
+}
+requestAnimationFrame(loop);
+window.__kaset = { get clip() { return clip ? { size: clip.blob.size, type: clip.blob.type, name: clip.name } : null; }, get state() { return { ...S, gain: brain.gain, L: brain.L, procCount }; } };
+})();
+</script>
+</body>
+</html>
